@@ -1,0 +1,21 @@
+/* import the monospace font */
+@font-face {
+    font-family: monospace;
+    src: url(NotoSansMono.ttf);
+}
+
+/* define variables */
+:root {
+    --background-color: #fff;
+}
+
+/* remove body padding and color background */
+body {
+    margin: 0px;
+    background-color: var(--background-color);
+}
+
+#test {
+    background-color: lightblue;
+    font-family: monospace;
+}
