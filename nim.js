@@ -42,4 +42,39 @@ const calculateNimSum = (game) => {
 	return nimSum;
 };
 
-console.log(calculateNimSum(newGame(6)));
+// Takes in a game array and and returns how many
+// lines need to be crossed and in which row
+const calculateNextMove = (game) => {
+	// Checking if array is 2d
+	let baseNimSum = 0 // nimSUm of the game in its beginning state
+	if ((game[0].constructor = Array)) {
+		// Calculating the nimSum of the game in its beginning state
+		for (let row = 0; row < game.length; row++) {
+			const heap = game[row]; // Selecting subarray, or row of the game
+			baseNimSum ^= heap.length; // ^ is the bitwise xor operator
+		}
+		console.log(`baseNimSum: ${baseNimSum}`)
+		// Looping through rows,
+		// If the the nimSum of the baseNimSum and the length of the row
+		// is less than the length the of the row
+		// The row should be reduced to the
+		// nimSum of the baseNimSum and the length of the row
+		for (let row = 0; row < game.length; row++) {
+			const heap = game[row];
+			console.log(`Complicated nimSum: ${baseNimSum ^ heap.length}\nHeap length ${heap.length}`);
+			if ((baseNimSum ^ heap.length) < heap.length) {
+				return {
+					row : row,
+					removals : heap.length - (baseNimSum ^ heap.length)
+				}
+			}
+		}
+	}
+}
+
+// !!! MORE TESTING REQUIRED !!!
+// Simple Check
+// Check with https://en.wikipedia.org/wiki/Nim
+var game = [[1,1,1], [1,1,1,1], [1,1,1,1,1]]
+console.log(calculateNimSum(game));
+console.log(calculateNextMove(game));
