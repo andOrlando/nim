@@ -21,8 +21,8 @@ function clearScreen(background_color) {
  * @param {int} x
  * @param {int} y
  * @param {String} text
- * @param {css variable} color
- * @param {css variable} background_color
+ * @param {String} color
+ * @param {String} background_color
  */
 function drawAt(x, y, text, color, background_color) {
     const row = document.querySelectorAll(`[y = '${y}]'`);
