@@ -7,6 +7,7 @@
 /* define variables */
 :root {
     --background-color: #fff;
+    --tui-div-line-height: 20px;
 }
 
 /* remove body padding and color background */
@@ -15,7 +16,16 @@ body {
     background-color: var(--background-color);
 }
 
-#test {
-    background-color: lightblue;
+#tui {
+    overflow: hidden;
+}
+
+#tui span {
+    font-size: 20px;
+    background-color: var(--background-color);
     font-family: monospace;
+}
+
+#tui div {
+    line-height: var(--tui-div-line-height);
 }
