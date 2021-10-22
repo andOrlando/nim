@@ -7,6 +7,8 @@
 /* define variables */
 :root {
     --background-color: #fff;
+    --selected-item-color: rgb(202, 255, 177);
+
     --tui-div-line-height: 20px;
 }
 

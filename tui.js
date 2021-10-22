@@ -23,7 +23,7 @@ function recreateScreen(x, y) {
 		// Get action for xs
 		const action = x < geo.x ? 
 			(x, div) => {div.querySelector(`[x='${x-1}']`).remove()} :
-			(x, div) => {div.insertAdjacentHTML("beforeend", `<span x='${x}'>x</span>`)};
+			(x, div) => {div.insertAdjacentHTML("beforeend", `<span x='${x}'> </span>`)};
 
 		// If we're removing extra, we only need to remove the earlier xs
 		const yMax = y < geo.y ? y : geo.y;
@@ -46,7 +46,7 @@ function recreateScreen(x, y) {
 		const action = y < geo.y ?
 			(y) => {document.querySelector(`[y='${y-1}']`).remove()} : 
 			(y) => {document.getElementById("tui").insertAdjacentHTML("beforeend", `<div y='${y}'>
-				${Array.from({length:x}, (_, i) => `<span x='${i}'>y</span>`).join('')}</div>`)};
+				${Array.from({length:x}, (_, i) => `<span x='${i}'> </span>`).join('')}</div>`)};
 
 		for (let i = 0; i < Math.abs(y - geo.y); i++) {
 			action(y > geo.y ? geo.y + i : geo.y - i);
@@ -94,7 +94,7 @@ function clearAt(x, y, length) {
 
 		const char = row.querySelector(`[x='${x + i}']`)
 		char.textContent = " ";
-		char.style.color = "";
+		char.style.color = null;
 		char.style.backgroundColor = "var(--background-color)";
 	}
 }
@@ -110,10 +110,9 @@ function clearScreen() {
  * @param {int} x The x-position
  * @param {int} y The y-position
  * @param {String} text The text to set it to
- * @param {String} color The color in string form of the text
- * @param {String} backgroundColor The color in string form of the background
+ * @param {Object} style Takes color or backgroundColor
  */
-function drawAt(x, y, text, color, backgroundColor) {
+function drawAt(x, y, text, style = {}) {
 
     const row = document.querySelector(`[y='${y}']`);
 
@@ -126,8 +125,27 @@ function drawAt(x, y, text, color, backgroundColor) {
 
 		const char = row.querySelector(`[x='${x + i}']`)
 		char.textContent = text[i];
-		if (color) char.style.color = color;
-		if (backgroundColor) char.style.backgroundColor = backgroundColor;
+		if (style.color !== undefined) char.style.color = style.color;
+		if (style.backgroundColor !== undefined) char.style.backgroundColor = style.backgroundColor;
 
     }
+}
+
+/**
+ * Style some number of characters at a specified index
+ * 
+ * @param {int} x The x-position
+ * @param {int} y The y-position
+ * @param {int} length Number of characters to style
+ * @param {Object} style Takes color or backgroundColor
+ */
+function styleAt(x, y, length, style = {}) {
+	const row = document.querySelector(`[y='${y}']`);
+	for (let i = 0; i < length; i++) {
+		if (x + i > geo.x) break;
+
+		const char = row.querySelector(`[x='${x + i}']`)
+		if (style.color !== undefined) char.style.color = style.color;
+		if (style.backgroundColor !== undefined) char.style.backgroundColor = style.backgroundColor
+	}
 }
