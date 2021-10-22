@@ -8,7 +8,7 @@
 //         +---+
 // Would become
 // [2, 2, 1]
-const convertToHeaps = (game) => {
+function convertToHeaps(game) {
 	var heaps = [];
 	// Check if game array is 2d
 	if (game[0].constructor == Array) {
@@ -22,16 +22,16 @@ const convertToHeaps = (game) => {
 		heaps.push(game.length);
 	}
 	return heaps;
-};
+}
 
-const calculate_nim_sum = (heaps) => {
+function calculate_nim_sum(heaps) {
 	// ^ is the bitwise XOR operator
 	return heaps.reduce((a, b) => a ^ b, 0);
-};
+}
 
 // Finds the number of moves that can generate a nim sum of 0
 // from the current heaps
-const calculate_num_0_nim_sum_moves = (heaps) => {
+function calculate_num_0_nim_sum_moves(heaps) {
 	let num_0_nim_sum_moves = 0;
 	let nim_sum = calculate_nim_sum(heaps);
 	for (let i = 0; i < heaps.length; i++) {
@@ -43,14 +43,14 @@ const calculate_num_0_nim_sum_moves = (heaps) => {
 		}
 	}
 	return num_0_nim_sum_moves;
-};
+}
 
 // Find an optimal move for the current game state
 // If there is no optimal move,
 // Return the move that results in the fewest number of optimal moves
 // stemming from the resultant position
 // This move will be of the form {row: -1, removals: -1}
-const calculate_next_move = (heaps) => {
+function calculate_next_move(heaps) {
 	// Calculate the nim_sum of the game
 	let nim_sum = calculate_nim_sum(heaps);
 
@@ -127,4 +127,4 @@ const calculate_next_move = (heaps) => {
 			};
 		}
 	}
-};
+}
