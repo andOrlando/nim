@@ -1,7 +1,7 @@
 // Semi-library for creating a tui-like webpage
 
 // Get the size of a character
-let charGeo = {
+const charGeo = {
     x: document.getElementById("tui-test").getBoundingClientRect().width,
     y: document.getElementById("tui-test").getBoundingClientRect().height,
 };
@@ -12,7 +12,7 @@ document.getElementById("tui-test").remove()
 document.querySelector(":root").style.setProperty("--tui-div-line-height", `${charGeo.y-1}px`)
 
 // Initially no characters 
-geo = {x: 0, y: 0};
+let geo = {x: 0, y: 0};
 
 // Recreates the screen intelligently taking into account the current size
 function recreateScreen(x, y) {
@@ -21,16 +21,16 @@ function recreateScreen(x, y) {
 	if (x != geo.x) {
 
 		// Get action for xs
-		let action = x < geo.x ? 
+		const action = x < geo.x ? 
 			(x, div) => {div.querySelector(`[x='${x-1}']`).remove()} :
 			(x, div) => {div.insertAdjacentHTML("beforeend", `<span x='${x}'>x</span>`)};
 
 		// If we're removing extra, we only need to remove the earlier xs
-		let yMax = y < geo.y ? y : geo.y;
+		const yMax = y < geo.y ? y : geo.y;
 
 		for (let i = 0; i < yMax; i++) {
 			// Get the div
-			let div = document.querySelector(`[y='${i}']`);
+			const div = document.querySelector(`[y='${i}']`);
 
 			for (let j = 0; j < Math.abs(x - geo.x); j++) {
 				action(x > geo.x ? geo.x + j : geo.x - j, div);
@@ -43,7 +43,7 @@ function recreateScreen(x, y) {
 
 		// Get action for ys
 		// When adding new ones, it just creates a string containing the div and all the spans
-		let action = y < geo.y ?
+		const action = y < geo.y ?
 			(y) => {document.querySelector(`[y='${y-1}']`).remove()} : 
 			(y) => {document.getElementById("tui").insertAdjacentHTML("beforeend", `<div y='${y}'>
 				${Array.from({length:x}, (_, i) => `<span x='${i}'>y</span>`).join('')}</div>`)};
@@ -66,8 +66,8 @@ recreateScreen(
 window.addEventListener("resize", () => {
 
     // Get new possible x and y geometries
-    let x = Math.floor(window.innerWidth / charGeo.x);
-    let y = Math.floor(window.innerHeight / charGeo.y);
+    const x = Math.floor(window.innerWidth / charGeo.x);
+    const y = Math.floor(window.innerHeight / charGeo.y);
 
     if (geo.x != x || geo.y != y) {
         recreateScreen(x, y)
@@ -87,26 +87,23 @@ window.addEventListener("resize", () => {
  * @param {String} length The number of characters you want to clear
  */
 function clearAt(x, y, length) {
-    // length is how many characters to clear
+
+	const row = document.querySelector(`[y='${y}']`);
+
+	for (let i = 0; i < length; i++) {
+
+		const char = row.querySelector(`[x='${x + i}']`)
+		char.textContent = " ";
+		char.style.color = "";
+		char.style.backgroundColor = "var(--background-color)";
+	}
 }
 
-/**
- * Clears the screen to --background-color or the color specified
- *
- * @param {String} background_color The background color to clear to
- */
-function clearScreen(background_color) {
-    for(let y = 0; y < charGeo.y; y++) {
-        let row = document.querySelectorAll(`[y = '${y}]'`);
-        for( let x = 0; x < charGeo.x; x++) {
-            col = row.querySelectorAll(`[x = '${x}]'`);
-            col.textContent = ' ';
-            col.style.color = ""; // Not sure if this does what we want it to do
-            col.style.backgroundColor = "";
-        }
-    }
-    
+/* Clears the screen */
+function clearScreen() {
+    for(let i = 0; i < geo.y; i++) clearAt(0, i, geo.x)
 }
+
 /**
  * Draws a string at the target position
  *
@@ -114,19 +111,23 @@ function clearScreen(background_color) {
  * @param {int} y The y-position
  * @param {String} text The text to set it to
  * @param {String} color The color in string form of the text
- * @param {String} background_color The color in string form of the background
+ * @param {String} backgroundColor The color in string form of the background
  */
-function drawAt(x, y, text, color, background_color) {
-    const row = document.querySelectorAll(`[y = '${y}]'`);
+function drawAt(x, y, text, color, backgroundColor) {
+
+    const row = document.querySelector(`[y='${y}']`);
+
     // For each character in the string,
     // select the proper span element in the row and set the textContent to that character
-    for(let char = 0; char< text.length; char++) {
-        // Check if we are writing past the screen width
-        if (x + char < charGeo.x) {
-            let col = row.querySelectorAll(`[x = '${x + char}]'`);
-            col.textContent = text[char];
-            col.style.backgroundColor = background_color;
-            col.style.color = color;
-        }
+    for(let i = 0; i < text.length; i++) {
+
+		// Ensure it doesn't go out of bounds
+		if (x + i > geo.x) break; 
+
+		const char = row.querySelector(`[x='${x + i}']`)
+		char.textContent = text[i];
+		if (color) char.style.color = color;
+		if (backgroundColor) char.style.backgroundColor = backgroundColor;
+
     }
 }
