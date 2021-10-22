@@ -47,8 +47,8 @@ function keydownMenu(event) {
     }
     else if (event.code == "Enter") {
         switch (menuData.selectedIndex) {
-        case 0: GAMESTATE = gs.GAME; break;
-        case 1: //start up AI
+        case 0: GAMESTATE = gs.GAME; AI = false; break;
+        case 1: GAMESTATE = gs.GAME; AI = true; break;
         case 2: //settings (heap size?)
         case 3: //about (cool stuff about us)
         }
@@ -65,8 +65,28 @@ function keyupMenu(event) {
  *    NIM LOGIC      *
  *********************/
 
+let gameData = {
+    xi: 0,
+    yi: 0,
+    //TODO: Better heap initialization
+    heap: [[1, 0, 1, 1, 1, 1, 1], [1, 0, 0, 0, 1], [1, 1, 1], [1]]
+}
+
 function redrawGame() {
-    drawAt(0, 0, "heyo")
+    let x, y // I don't like redefining them in n^2
+    gameData.xi = Math.ceil((geo.x - 13) / 2)
+    gameData.yi = Math.ceil((geo.y - gameData.heap.length) / 2)
+
+    drawAt(0, 0, "Player 1's Turn")
+    for (let i = 0; i < gameData.heap.length; i++) {
+        for (let j = 0; j < gameData.heap[i].length; j++) {
+            x = gameData.xi + 2*i + 2*j
+            y = gameData.yi + i
+            drawAt(x, y,  gameData.heap[i][j] ? "|" : "┼")
+            
+            if (!gameData.heap[i][j] && j !== 0 && !gameData.heap[i][j-1]) drawAt(x-1, y, "─")
+        }
+    }
 }
 
 function keydownGame(event) {
