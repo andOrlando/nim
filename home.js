@@ -41,12 +41,12 @@ function keydownMenu(event) {
         md.selectedIndex += md.selectedIndex !== 0 ? -1 : 3
         styleAt(md.xi - 1, md.yi + md.yOffsets[md.selectedIndex], 15, {backgroundColor: "var(--selected-item-color)"})
     }
-    else if (event.code === "KeyS" || event.code == "ArrowDown") {
+    else if (event.code === "KeyS" || event.code === "ArrowDown") {
         styleAt(md.xi - 1, md.yi + md.yOffsets[md.selectedIndex], 15, {backgroundColor: null})
         md.selectedIndex += md.selectedIndex !== 3 ? 1 : -3
         styleAt(md.xi - 1, md.yi + md.yOffsets[md.selectedIndex], 15, {backgroundColor: "var(--selected-item-color)"})
     }
-    else if (event.code === "Enter") {
+    else if (event.code === "Enter" || event.code === "Space") {
         switch (md.selectedIndex) {
         case 0: GAMESTATE = GAME; break;
         case 1: GAMESTATE = GAME; break;
@@ -140,13 +140,13 @@ function keydownGame(event) {
             gd.row += gd.row !== gd.heap.length - 1 ? 1 : 1 - gd.heap.length
             styleAt(gd.xi - 1, gd.yi + gd.row, length, {backgroundColor: SELECTED_LINE_HL})
         }
-        else if (event.code === "Enter") {
+        else if (event.code === "Enter" || event.code === "Space") {
             // TODO: Disallow selecting full lines
             gd.state = LINE_SEL
             redrawLineSel()
         }
 
-        else if (event.code === "Escape") {
+        else if (event.code === "Escape" || event.code === "KeyQ") {
             GAMESTATE = MENU
             redrawScreen()
         }
@@ -156,19 +156,19 @@ function keydownGame(event) {
         if (event.code === "KeyA" || event.code === "KeyS" 
             || event.code === "ArrowLeft" || event.code === "ArrowDown") {
             
-            styleAt(gd.xi + gd.col*2 + gd.row*2, gd.yi + gd.row, 2, {backgroundColor: null})
+            styleAt(gd.xi + gd.col*2 + gd.row*2 - 1, gd.yi + gd.row, 3, {backgroundColor: null})
             gd.col += gd.col !== 0 ? -1 : gd.heap[gd.row].length - 1
-            styleAt(gd.xi + gd.col*2 + gd.row*2 - 1, gd.yi + gd.row, 2, {backgroundColor: SELECTED_ROW_HL})
+            styleAt(gd.xi + gd.col*2 + gd.row*2 - 1, gd.yi + gd.row, 3, {backgroundColor: SELECTED_ROW_HL})
         }
         else if (event.code === "KeyD" || event.code === "KeyW" 
             || event.code === "ArrowRight" || event.code === "ArrowUp") {
 
-            styleAt(gd.xi + gd.col*2 + gd.row*2 - 1, gd.yi + gd.row, 2, {backgroundColor: null})
+            styleAt(gd.xi + gd.col*2 + gd.row*2 - 1, gd.yi + gd.row, 3, {backgroundColor: null})
             gd.col += gd.col !== gd.heap[gd.row].length - 1 ? 1 : 1 - gd.heap[gd.row].length
-            styleAt(gd.xi + gd.col*2 + gd.row*2, gd.yi + gd.row, 2, {backgroundColor: SELECTED_ROW_HL})
+            styleAt(gd.xi + gd.col*2 + gd.row*2 - 1, gd.yi + gd.row, 3, {backgroundColor: SELECTED_ROW_HL})
         }
 
-        else if (event.code === "Enter") {
+        else if (event.code === "Enter" || event.code === "Space") {
             const value = gd.heap[gd.row][gd.col] = gd.heap[gd.row][gd.col] ^ 1
             drawAt(gd.xi + gd.col*2 + gd.row*2, gd.yi + gd.row, value ? "|" : "+")
 
@@ -176,12 +176,12 @@ function keydownGame(event) {
             if (gd.col !== 0)
                 drawAt(gd.xi + gd.col*2 + gd.row*2 - 1, gd.yi + gd.row, gd.heap[gd.row][gd.col-1] || value ? " " : "-")
             
-            if (gd.col !== gd.heap[gd.row].length-2)
+            if (gd.col !== gd.heap[gd.row].length-1)
                 drawAt(gd.xi + gd.col*2 + gd.row*2 + 1, gd.yi + gd.row, gd.heap[gd.row][gd.col+1] || value ? " " : "-")
 
         }
 
-        else if (event.code === "Escape") {
+        else if (event.code === "Escape" || event.code === "KeyQ") {
             gd.state = ROW_SEL
             gd.col = 0
             redrawRowSel()
