@@ -4,6 +4,9 @@ GAMESTATE = 0
 const MENU = 0
 const GAME = 1
 
+// Deep clone method for initial heap tracking
+function clone(heap) { return Array.from(heap, row => Array.from(row)) }
+
 /**********************
  *     MENU LOGIC     *
  **********************/
@@ -31,7 +34,7 @@ function redrawMenu() {
     drawAt(md.xi + 13 - 5, md.yi + md.yOffsets[3], "about")
 
     // Highlight the first menu option
-    styleAt(md.xi - 1, md.yi, 15, {backgroundColor: "var(--selected-item-color)"})
+    styleAt(md.xi - 1, md.yi + md.yOffsets[md.selectedIndex], 15, {backgroundColor: "var(--selected-item-color)"})
 }
 
 function keydownMenu(event) {
@@ -48,8 +51,8 @@ function keydownMenu(event) {
     }
     else if (event.code === "Enter" || event.code === "Space") {
         switch (md.selectedIndex) {
-        case 0: GAMESTATE = GAME; break;
-        case 1: GAMESTATE = GAME; break;
+        case 0: GAMESTATE = GAME; resetGame(false); break;
+        case 1: GAMESTATE = GAME; resetGame(true); break;
         case 2: //settings (heap size?)
         case 3: //about (cool stuff about us)
         }
@@ -66,19 +69,27 @@ function keyupMenu(event) {}
 const ROW_SEL = 0
 const LINE_SEL = 1
 const AI = 2
+const GAME_OVER = 3
 
 const SELECTED_LINE_HL = "var(--selected-item-color)"
 const SELECTED_ROW_HL = "var(--selected-item-color)"
 
-// Game Data
-// TODO: It has to reset this to its initial state before each game
-let gd = {
-    xi: 0, yi: 0,
-    row: 0, col: 0,
-    state: ROW_SEL,
+let gd; // Game Data
 
-    //TODO: Better heap initialization
-    heap: [[1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1], [1, 1, 1], [1]]
+function resetGame(vsAI) {
+    gd = { 
+        xi: 0, yi: 0, 
+        row: 0, col: 0, 
+        editedRow: null, 
+        player: 1,
+        vsAI: vsAI,
+
+        // TODO: Better heap initialization
+        heap: [[1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1], [1, 1, 1], [1]],
+        heapOld: [[1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1], [1, 1, 1], [1]],
+
+        state: ROW_SEL 
+    }
 }
 
 // The function called in redrawScreen for this gamestate
@@ -86,6 +97,7 @@ function redrawGame() {
     switch (gd.state) {
     case ROW_SEL: redrawRowSel(); break;
     case LINE_SEL: redrawLineSel(); break;
+    case GAME_OVER: redrawGameOver(); break;
     }
 }
 
@@ -97,7 +109,7 @@ function redrawHeap() {
     gd.xi = Math.ceil((geo.x - 13) / 2)
     gd.yi = Math.ceil((geo.y - gd.heap.length) / 2)
 
-    drawAt(0, 0, "Player 1's Turn")
+    drawAt(0, 0, `Player ${gd.player}'s Turn`)
     for (let i = 0; i < gd.heap.length; i++) {
         for (let j = 0; j < gd.heap[i].length; j++) {
             x = gd.xi + 2*i + 2*j
@@ -107,6 +119,25 @@ function redrawHeap() {
             if (!gd.heap[i][j] && j !== 0 && !gd.heap[i][j-1]) drawAt(x-1, y, "-")
         }
     }
+
+    drawAt(gd.xi + gd.heap[0].length*2 - 9, gd.yi + gd.heap.length, "End Turn", {onclick: endTurn})
+}
+
+function endTurn() {
+    // This would be game over
+    if (![].concat(...gd.heap).includes(1)) {
+        gd.state = GAME_OVER
+        redrawGame()
+
+        return;
+    }
+
+    gd.heapOld = clone(gd.heap)
+    gd.state = ROW_SEL
+    gd.player = gd.player ^ 3
+    gd.editedRow = null
+    gd.col = 0
+    redrawRowSel()
 }
 
 function redrawRowSel() {
@@ -125,6 +156,11 @@ function redrawLineSel() {
     styleAt(gd.xi + gd.col*2 + gd.row*2 - 1, gd.yi + gd.row, 3, {backgroundColor: SELECTED_ROW_HL})
 }
 
+function redrawGameOver() {
+    clearScreen();
+    drawAt(Math.ceil((geo.x - 14) / 2), Math.ceil(geo.y / 2), `Player ${gd.player ^ 3} Wins!`)
+}
+
 function keydownGame(event) {
     if (gd.state === ROW_SEL) {
         // Length of highlight so that it's calc'd once and also clarity
@@ -141,9 +177,32 @@ function keydownGame(event) {
             styleAt(gd.xi - 1, gd.yi + gd.row, length, {backgroundColor: SELECTED_LINE_HL})
         }
         else if (event.code === "Enter" || event.code === "Space") {
-            // TODO: Disallow selecting full lines
-            gd.state = LINE_SEL
-            redrawLineSel()
+            // disallow selecting full row
+            if (!gd.heap[gd.row].includes(1)) {
+
+                clearAt(0, geo.y-1, geo.x)
+                drawAt(0, geo.y-1, ": Row is already crossed out")
+            }
+            // discard chnges in other row if need be
+            else if (gd.editedRow !== null && gd.editedRow !== gd.row) {
+
+                gd.heap = clone(gd.heapOld)
+                gd.state = LINE_SEL
+                redrawLineSel()
+
+                clearAt(0, geo.y-1, geo.x)
+                drawAt(0, geo.y-1, `: Discarded changes in row ${gd.editedRow+1}`)
+
+                gd.editedRow = gd.row
+            }
+            // otherwise just do it normally
+            else {
+                gd.state = LINE_SEL
+                redrawLineSel()
+
+                gd.editedRow = gd.row
+            }
+
         }
 
         else if (event.code === "Escape" || event.code === "KeyQ") {
@@ -169,6 +228,12 @@ function keydownGame(event) {
         }
 
         else if (event.code === "Enter" || event.code === "Space") {
+            if (!gd.heapOld[gd.row][gd.col]) {
+                clearAt(0, geo.y-1, geo.x)
+                drawAt(0, geo.y-1, ": That line has already been crossed out")
+                return
+            }
+
             const value = gd.heap[gd.row][gd.col] = gd.heap[gd.row][gd.col] ^ 1
             drawAt(gd.xi + gd.col*2 + gd.row*2, gd.yi + gd.row, value ? "|" : "+")
 
@@ -186,6 +251,11 @@ function keydownGame(event) {
             gd.col = 0
             redrawRowSel()
         }
+    }
+
+    else if (gd.state === GAME_OVER) {
+        GAMESTATE = MENU
+        redrawScreen()
     }
 }
 

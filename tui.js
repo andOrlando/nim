@@ -138,8 +138,9 @@ function drawAt(x, y, text, style = {}) {
 		const char = row.querySelector(`[x='${x + i}']`);
 		char.textContent = text[i];
 		if (style.color !== undefined) char.style.color = style.color;
-		if (style.backgroundColor !== undefined)
-			char.style.backgroundColor = style.backgroundColor;
+		if (style.backgroundColor !== undefined) char.style.backgroundColor = style.backgroundColor;
+
+		if (style.onclick !== undefined) char.addEventListener("click", style.onclick)
 	}
 }
 
@@ -158,7 +159,9 @@ function styleAt(x, y, length, style = {}) {
 
 		const char = row.querySelector(`[x='${x + i}']`);
 		if (style.color !== undefined) char.style.color = style.color;
-		if (style.backgroundColor !== undefined)
-			char.style.backgroundColor = style.backgroundColor;
+		if (style.backgroundColor !== undefined) char.style.backgroundColor = style.backgroundColor;
+
+		if (style.onclick !== undefined) char.addEventListener("click", style.onclick)
+		else if (style.onclick === null) char.removeEventListener("click")
 	}
 }
