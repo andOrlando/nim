@@ -56,6 +56,38 @@ function calculate_num_0_nim_sum_moves(heaps) {
 // stemming from the resultant position
 // This move will be of the form {row: -1, removals: -1}
 function calculate_next_move(heaps) {
+	// Calculate the number of heaps greater than one
+	let nums_heaps_greater_than_one = heaps.filter((x) => x > 1).length;
+
+	// If there is one or less piles with more than one stick,
+	// We are in the endgame and must adjust strategy
+	if (nums_heaps_greater_than_one <= 1) {
+		let heaps_left = heaps.filter((x) => x > 0).length;
+		let heaps_left_is_odd = heaps_left % 2 == 1;
+		let largest_heap = Math.max(...heaps);
+		let index_of_largest_heap = heaps.indexOf(largest_heap);
+		// If the largest heap is only 1 and there is an odd number of heaps left
+		// the opponent has won
+		if (largest_heap == 1 && heaps_left_is_odd) {
+			return false;
+		}
+		// If execution reaches this point, the computer has not lost
+		// The state of the game consists of all ones and/or one larger heap
+		// If there is an odd number of heaps, we reduce the largest heap to one
+		// If there is and even number of heaps, we completely reduce the largest heap
+		if(largest_heap == 1 && !heaps_left_is_odd) {
+			// We can use logic from below beccause it returns 0 removals, but we have to remove the heap
+			return {
+				row: index_of_largest_heap,
+				removals: 1
+			};
+		}
+		return {
+			row: index_of_largest_heap,
+			removals: largest_heap - (heaps_left_is_odd ? 1 : 0),
+		};
+	}
+
 	// Calculate the nim_sum of the game
 	let nim_sum = calculate_nim_sum(heaps);
 
@@ -89,31 +121,6 @@ function calculate_next_move(heaps) {
 			}
 		}
 		return best_move;
-	}
-
-	// Calculate the number of heaps greater than one
-	let nums_heaps_greater_than_one = heaps.filter((x) => x > 1).length;
-
-	// If there is one or less piles with more than one stick,
-	// We are in the endgame and must adjust strategy
-	if (nums_heaps_greater_than_one <= 1) {
-		let heaps_left = heaps.filter((x) => x > 0).length;
-		let heaps_left_is_odd = heaps_left % 2 == 1;
-		let largest_heap = Math.max(...heaps);
-		let index_of_largest_heap = heaps.indexOf(largest_heap);
-		// If the largest heap is only 1 and there is one heap left
-		// the opponent has won
-		if (largest_heap == 1 && heaps_left == 1) {
-			return false;
-		}
-		// If execution reaches this point, the computer has not lost
-		// The state of the game consists of all ones and one larger heap
-		// If there is an odd number of heaps, we reduce the largest heap to one
-		// If there is and even number of heaps, we completely reduce the largest heap
-		return {
-			row: index_of_largest_heap,
-			removals: largest_heap - (heaps_left_is_odd ? 1 : 0),
-		};
 	}
 
 	// If execution reaches this point, we are not in the endgame
