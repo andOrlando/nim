@@ -99,10 +99,7 @@ function calculate_next_move(heaps) {
 		// If the largest heap is only 1 and there is one heap left
 		// the opponent has won
 		if (largest_heap == 1 && heaps_left == 1) {
-			return {
-				row: -1,
-				removals: -1,
-			};
+			return false;
 		}
 		// If execution reaches this point, the computer has not lost
 		// The state of the game consists of all ones and one larger heap
