@@ -14,7 +14,12 @@ function convertToHeaps(game) {
 	if (game[0].constructor == Array) {
 		// heap sizes are lengths of subarrays
 		for (let i = 0; i < game.length; i++) {
-			heaps.push(game[i].length);
+			let heap = 0;
+			for (let j = 0; j < game[i].length; j++) {
+				const num = game[i][j];
+				heap += num ? 1 : 0;
+			}
+			heaps.push(heap);
 		}
 	}
 	// If array is 1d, heap size is simple its length

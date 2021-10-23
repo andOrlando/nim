@@ -7,6 +7,7 @@ const GAME = 1;
 const SELECTED_MENU_HL = 'var(--selected-item-color)';
 const SELECTED_LINE_HL = 'var(--selected-item-color)';
 const SELECTED_ROW_HL = 'var(--selected-item-color)';
+const ALGO_SELECTED_HL= 'var(--algo-selected-item-color)';
 
 // Deep clone method for initial heap tracking
 function clone(heap) {
@@ -112,6 +113,7 @@ const AI = 2;
 const GAME_OVER = 3;
 
 let gd; // Game Data
+
 /**
  * Reset state of game including line highlighting and any changes to heaps
  * @param {bool} vsAI Whether the new game will be against AI or not
@@ -229,7 +231,13 @@ function redrawGameOver() {
 }
 
 function keydownGame(event) {
-	// If we are at the row elvle, not the individual character level
+	// TESTING SECTION UNTIL AUTOMATIC CALLING OF makeAlgoMove() IS IMPLEMENTED
+	// TODO
+	if (event.code == 'KeyP') {
+		makeAlgoMove(gd.heap);
+		return;
+	}
+	// If we are at the row level, not the individual character level
 	if (gd.state === ROW_SEL) {
 
 		// Selecting previous row
@@ -347,7 +355,7 @@ function keydownGame(event) {
 			);
 		}
 
-		// Crosing out characters
+		// Crossing out characters
 		else if (event.code === 'Enter' || event.code === 'Space') {
 			if (!gd.heapOld[gd.row][gd.col]) {
 				clearAt(0, geo.y - 1, geo.x);
@@ -402,11 +410,81 @@ function keydownGame(event) {
  * then executes it slowly so user can see what is being played
  * @param {Number[][]} game this should always be gd.heap
  */
+// Kinda janky as if you call this really quickly multiple times, it does weird stuff
+// However this would never happen in a game
 function makeAlgoMove(game) {
 	let heaps = convertToHeaps(game);
 	let move = calculate_next_move(heaps);
 	if (!move) {
-		// The computer has lost
+		// TODO: decide what algorithm should do if it cannot win
+		// Show loss screen or play out the game? Better user satisfaction that way probably
+	} else {
+		// If highlight is already on correct row change it's color
+		if (gd.row == move.row) {
+			styleAt(
+				gd.xi - 1,
+				gd.yi + gd.row,
+				gd.highlightLength,
+				{ backgroundColor: ALGO_SELECTED_HL}
+			);
+		}
+		// TODO: make line move in steps (not sure why it isn't already)
+		// TODO: make line move up or down depending on which way is faster
+		while (gd.row != move.row) {
+			styleAt(
+				gd.xi - 1, 
+				gd.yi + gd.row, 
+				gd.highlightLength, 
+				{ backgroundColor: null }
+			);
+			// Goes up a row	
+			gd.row += gd.row !== 0 ? -1 : gd.heap.length - 1;
+
+			styleAt(
+				gd.xi - 1, 
+				gd.yi + gd.row, 
+				gd.highlightLength, 
+				{ backgroundColor: ALGO_SELECTED_HL }
+			);
+		}
+		
+		// Using setTimeout() to stagger different parts of move
+		// so that they are visible
+		setTimeout(() => {
+			styleAt(
+				gd.xi - 1, 
+				gd.yi + gd.row, 
+				gd.highlightLength, 
+				{ backgroundColor: null }
+			);
+		}, 500)
+
+		setTimeout(() => {
+			// Updating game state
+			let removedIndices = [];
+			for (let i = 0; i < gd.heap[move.row].length; i++) {
+				if (removedIndices.length == move.removals) break;
+				const line = gd.heap[move.row][i];
+				if (line == 1) {
+					styleAt(
+						gd.xi + gd.col * 2 + gd.row * 2 - 1,
+						gd.yi + gd.row,
+						3, 
+						{ backgroundColor: ALGO_SELECTED_HL }
+					);
+					gd.col += 1;
+					removedIndices.push(i);
+				} else {
+					gd.col += 1;
+				}
+			}
+			for (let i = 0; i < removedIndices.length; i++) {
+				const index = removedIndices[i];
+				gd.heap[move.row][index] = 0;
+			}}, 500)
+		
+		// Updating screen
+		setTimeout(() => {endTurn()}, 1000);
 	}
 }
 /*******************
