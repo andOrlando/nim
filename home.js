@@ -416,6 +416,7 @@ function makeAlgoMove(game) {
 	let heaps = convertToHeaps(game);
 	let move = calculate_next_move(heaps);
 	if (!move) {
+		redrawGameOver()
 		// TODO: decide what algorithm should do if it cannot win
 		// Show loss screen or play out the game? Better user satisfaction that way probably
 	} else {
