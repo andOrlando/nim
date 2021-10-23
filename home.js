@@ -4,6 +4,10 @@ GAMESTATE = 0;
 const MENU = 0;
 const GAME = 1;
 
+const SELECTED_MENU_HL = 'var(--selected-item-color)';
+const SELECTED_LINE_HL = 'var(--selected-item-color)';
+const SELECTED_ROW_HL = 'var(--selected-item-color)';
+
 // Deep clone method for initial heap tracking
 function clone(heap) {
 	return Array.from(heap, (row) => Array.from(row));
@@ -36,44 +40,61 @@ function redrawMenu() {
 	drawAt(md.xi + 13 - 5, md.yi + md.yOffsets[3], 'about');
 
 	// Highlight the first menu option
-	styleAt(md.xi - 1, md.yi + md.yOffsets[md.selectedIndex], 15, {
-		backgroundColor: 'var(--selected-item-color)',
-	});
+	styleAt(
+		md.xi - 1, 
+		md.yi + md.yOffsets[md.selectedIndex], 
+		15, { backgroundColor: SELECTED_MENU_HL }
+	);
 }
 
 function keydownMenu(event) {
 	//TODO: Less hardcoding? May not be necessary
 	if (event.code === 'KeyW' || event.code === 'ArrowUp') {
+
 		// Clear highlighting on previously selected row
-		styleAt(md.xi - 1, md.yi + md.yOffsets[md.selectedIndex], 15, {
-			backgroundColor: null,
-		});
+		styleAt(
+			md.xi - 1, 
+			md.yi + md.yOffsets[md.selectedIndex], 
+			15, { backgroundColor: null }
+		);
+
 		// Update internallly which row is selected
 		md.selectedIndex += md.selectedIndex !== 0 ? -1 : 3;
+
 		// Highlight new row
-		styleAt(md.xi - 1, md.yi + md.yOffsets[md.selectedIndex], 15, {
-			backgroundColor: 'var(--selected-item-color)',
-		});
+		styleAt(
+			md.xi - 1, 
+			md.yi + md.yOffsets[md.selectedIndex], 
+			15, { backgroundColor: SELECTED_MENU_HL }
+		);
+
 	} else if (event.code === 'KeyS' || event.code === 'ArrowDown') {
-		styleAt(md.xi - 1, md.yi + md.yOffsets[md.selectedIndex], 15, {
-			backgroundColor: null,
-		});
+
+		styleAt(
+			md.xi - 1, 
+			md.yi + md.yOffsets[md.selectedIndex], 
+			15, { backgroundColor: null }
+		);
+
 		md.selectedIndex += md.selectedIndex !== 3 ? 1 : -3;
-		styleAt(md.xi - 1, md.yi + md.yOffsets[md.selectedIndex], 15, {
-			backgroundColor: 'var(--selected-item-color)',
-		});
+
+		styleAt(
+			md.xi - 1, 
+			md.yi + md.yOffsets[md.selectedIndex], 
+			15, { backgroundColor: SELECTED_MENU_HL }
+		);
+
 	} else if (event.code === 'Enter' || event.code === 'Space') {
-		switch (md.selectedIndex) {
-			case 0:
-				GAMESTATE = GAME;
-				resetGame(false);
-				break;
-			case 1:
-				GAMESTATE = GAME;
-				resetGame(true);
-				break;
-			case 2: //settings (heap size?)
-			case 3: //about (cool stuff about us)
+		if (md.selectedIndex === 0) {
+			GAMESTATE = GAME;
+			resetGame(false);
+		} else if (md.selectedIndex === 1) {
+			GAMESTATE = GAME;
+			resetGame(true);
+		} else if (md.selectedIndex === 2) {
+			// Settings
+		} else if (md.selectedIndex === 3) {
+			// About
 		}
 
 		redrawScreen();
@@ -90,9 +111,6 @@ const LINE_SEL = 1;
 const AI = 2;
 const GAME_OVER = 3;
 
-const SELECTED_LINE_HL = 'var(--selected-item-color)';
-const SELECTED_ROW_HL = 'var(--selected-item-color)';
-
 let gd; // Game Data
 /**
  * Reset state of game including line highlighting and any changes to heaps
@@ -107,28 +125,22 @@ function resetGame(vsAI) {
 		editedRow: null,
 		player: 1,
 		vsAI: vsAI,
+		textLength: 13,
+		highlightLength: 15,
 
 		// TODO: Better heap initialization
 		heap: [[1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1], [1, 1, 1], [1]],
 		heapOld: [[1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1], [1, 1, 1], [1]],
 
-		state: ROW_SEL,
+		state: ROW_SEL
 	};
 }
 
 // The function called in redrawScreen for this gamestate
 function redrawGame() {
-	switch (gd.state) {
-		case ROW_SEL:
-			redrawRowSel();
-			break;
-		case LINE_SEL:
-			redrawLineSel();
-			break;
-		case GAME_OVER:
-			redrawGameOver();
-			break;
-	}
+	if (gd.state === ROW_SEL) redrawRowSel();
+	else if (gd.state === LINE_SEL) redrawLineSel();
+	else if (gd.state === GAME_OVER) redrawGameOver();
 }
 
 /* Base function for redrawing the heap, used in multiple places
@@ -136,10 +148,12 @@ function redrawGame() {
  */
 function redrawHeap() {
 	let x, y; // I don't like redefining them in n^2
-	gd.xi = Math.ceil((geo.x - 13) / 2);
-	gd.yi = Math.ceil((geo.y - gd.heap.length) / 2);
+	gd.xi = Math.ceil((geo.x - gd.textLength) / 2);
+	gd.yi = Math.ceil((geo.y - gd.heap.length) / 2); //TODO: Use values from settings
 
+	// TODO: Allow for AI instead of player 2?
 	drawAt(0, 0, `Player ${gd.player}'s Turn`);
+
 	for (let i = 0; i < gd.heap.length; i++) {
 		for (let j = 0; j < gd.heap[i].length; j++) {
 			x = gd.xi + 2 * i + 2 * j;
@@ -151,6 +165,7 @@ function redrawHeap() {
 		}
 	}
 
+	// TODO: Make one line lower
 	drawAt(
 		gd.xi + gd.heap[0].length * 2 - 9,
 		gd.yi + gd.heap.length,
@@ -160,11 +175,10 @@ function redrawHeap() {
 }
 
 function endTurn() {
-	// This would be game over
+	// Checks for no more 1s
 	if (![].concat(...gd.heap).includes(1)) {
 		gd.state = GAME_OVER;
 		redrawGame();
-
 		return;
 	}
 
@@ -183,9 +197,12 @@ function redrawRowSel() {
 	clearScreen();
 	redrawHeap();
 
-	styleAt(gd.xi - 1, gd.yi + gd.row, gd.heap[0].length * 2 + 1, {
-		backgroundColor: SELECTED_LINE_HL,
-	});
+	styleAt(
+		gd.xi - 1, 
+		gd.yi + gd.row, 
+		gd.highlightLength, 
+		{ backgroundColor: SELECTED_LINE_HL }
+	);
 }
 /**
  * Highlights current character
@@ -195,9 +212,11 @@ function redrawLineSel() {
 	clearScreen();
 	redrawHeap();
 
-	styleAt(gd.xi + gd.col * 2 + gd.row * 2 - 1, gd.yi + gd.row, 3, {
-		backgroundColor: SELECTED_ROW_HL,
-	});
+	styleAt(
+		gd.xi + gd.col * 2 + gd.row * 2 - 1, 
+		gd.yi + gd.row, 
+		3, { backgroundColor: SELECTED_ROW_HL }
+	);
 }
 
 function redrawGameOver() {
@@ -212,36 +231,54 @@ function redrawGameOver() {
 function keydownGame(event) {
 	// If we are at the row elvle, not the individual character level
 	if (gd.state === ROW_SEL) {
-		// Length of highlight so that it's calculated once and also clarity
-		const length = gd.heap[0].length * 2 + 1;
 
 		// Selecting previous row
 		if (event.code === 'KeyW' || event.code === 'ArrowUp') {
-			styleAt(gd.xi - 1, gd.yi + gd.row, length, {
-				backgroundColor: null,
-			});
+			styleAt(
+				gd.xi - 1, 
+				gd.yi + gd.row, 
+				gd.highlightLength, 
+				{ backgroundColor: null }
+			);
+
 			gd.row += gd.row !== 0 ? -1 : gd.heap.length - 1;
-			styleAt(gd.xi - 1, gd.yi + gd.row, length, {
-				backgroundColor: SELECTED_LINE_HL,
-			});
+
+			styleAt(
+				gd.xi - 1, 
+				gd.yi + gd.row, 
+				gd.highlightLength, 
+				{ backgroundColor: SELECTED_LINE_HL }
+			);
 		}
+
 		// Selecting next row
 		else if (event.code === 'KeyS' || event.code == 'ArrowDown') {
-			styleAt(gd.xi - 1, gd.yi + gd.row, length, {
-				backgroundColor: null,
-			});
+			styleAt(
+				gd.xi - 1,
+				gd.yi + gd.row,
+				gd.highlightLength,
+				{ backgroundColor: null }
+			);
+			
 			gd.row += gd.row !== gd.heap.length - 1 ? 1 : 1 - gd.heap.length;
-			styleAt(gd.xi - 1, gd.yi + gd.row, length, {
-				backgroundColor: SELECTED_LINE_HL,
-			});
+
+			styleAt(
+				gd.xi - 1,
+				gd.yi + gd.row,
+				gd.highlightLength,
+				{ backgroundColor: SELECTED_LINE_HL }
+			);
 		}
+
 		// Entering moves
 		else if (event.code === 'Enter' || event.code === 'Space') {
+
 			// disallow selecting already selected row
 			if (!gd.heap[gd.row].includes(1)) {
 				clearAt(0, geo.y - 1, geo.x);
 				drawAt(0, geo.y - 1, ': Row is already crossed out');
 			}
+
 			// Discard changes in other row if need be
 			else if (gd.editedRow !== null && gd.editedRow !== gd.row) {
 				gd.heap = clone(gd.heapOld);
@@ -249,14 +286,11 @@ function keydownGame(event) {
 				redrawLineSel();
 
 				clearAt(0, geo.y - 1, geo.x);
-				drawAt(
-					0,
-					geo.y - 1,
-					`: Discarded changes in row ${gd.editedRow + 1}`
-				);
+				drawAt(0, geo.y - 1, `: Discarded changes in row ${gd.editedRow + 1}`);
 
 				gd.editedRow = gd.row;
 			}
+
 			// Otherwise just do move normally
 			else {
 				gd.state = LINE_SEL;
@@ -265,61 +299,65 @@ function keydownGame(event) {
 				gd.editedRow = gd.row;
 			}
 		}
-		// Exiitng the game
+
+		// Exit the game
 		else if (event.code === 'Escape' || event.code === 'KeyQ') {
 			GAMESTATE = MENU;
 			redrawScreen();
 		}
 	}
-	// If we are on the chracter level
+
+	// Selecting individual lines
 	else if (gd.state === LINE_SEL) {
+
 		// Moving the selected character left
-		if (
-			event.code === 'KeyA' ||
-			event.code === 'KeyS' ||
-			event.code === 'ArrowLeft' ||
-			event.code === 'ArrowDown'
-		) {
-			styleAt(gd.xi + gd.col * 2 + gd.row * 2 - 1, gd.yi + gd.row, 3, {
-				backgroundColor: null,
-			});
+		if (event.code === 'KeyA' || event.code === 'KeyS' ||
+			event.code === 'ArrowLeft' || event.code === 'ArrowDown')
+		{
+			// TODO: Make clickable
+			styleAt(
+				gd.xi + gd.col * 2 + gd.row * 2 - 1,
+				gd.yi + gd.row,
+				3, { backgroundColor: null }
+			);
+
 			gd.col += gd.col !== 0 ? -1 : gd.heap[gd.row].length - 1;
-			styleAt(gd.xi + gd.col * 2 + gd.row * 2 - 1, gd.yi + gd.row, 3, {
-				backgroundColor: SELECTED_ROW_HL,
-			});
+
+			styleAt(gd.xi + gd.col * 2 + gd.row * 2 - 1,
+				gd.yi + gd.row,
+				3, { backgroundColor: SELECTED_ROW_HL }
+			);
 		}
+
 		// Moving the selected character right
-		else if (
-			event.code === 'KeyD' ||
-			event.code === 'KeyW' ||
-			event.code === 'ArrowRight' ||
-			event.code === 'ArrowUp'
-		) {
-			styleAt(gd.xi + gd.col * 2 + gd.row * 2 - 1, gd.yi + gd.row, 3, {
-				backgroundColor: null,
-			});
-			gd.col +=
-				gd.col !== gd.heap[gd.row].length - 1
-					? 1
-					: 1 - gd.heap[gd.row].length;
-			styleAt(gd.xi + gd.col * 2 + gd.row * 2 - 1, gd.yi + gd.row, 3, {
-				backgroundColor: SELECTED_ROW_HL,
-			});
+		else if (event.code === 'KeyD' || event.code === 'KeyW' ||
+			event.code === 'ArrowRight' || event.code === 'ArrowUp')
+		{
+			styleAt(gd.xi + gd.col * 2 + gd.row * 2 - 1,
+				gd.yi + gd.row,
+				3, { backgroundColor: null, }
+			);
+
+			gd.col += gd.col !== gd.heap[gd.row].length - 1 ? 1 : 1 - gd.heap[gd.row].length;
+
+			styleAt(
+				gd.xi + gd.col * 2 + gd.row * 2 - 1,
+				gd.yi + gd.row,
+				3, { backgroundColor: SELECTED_ROW_HL }
+			);
 		}
+
 		// Crosing out characters
 		else if (event.code === 'Enter' || event.code === 'Space') {
 			if (!gd.heapOld[gd.row][gd.col]) {
 				clearAt(0, geo.y - 1, geo.x);
-				drawAt(
-					0,
-					geo.y - 1,
-					': That line has already been crossed out'
-				);
+				drawAt(0, geo.y - 1, ': That line has already been crossed out');
 				return;
 			}
 
-			const value = (gd.heap[gd.row][gd.col] =
-				gd.heap[gd.row][gd.col] ^ 1);
+			// Assigns both the heap value and `value` to the new value
+			const value = (gd.heap[gd.row][gd.col] = gd.heap[gd.row][gd.col] ^ 1);
+
 			drawAt(
 				gd.xi + gd.col * 2 + gd.row * 2,
 				gd.yi + gd.row,
@@ -328,6 +366,7 @@ function keydownGame(event) {
 
 			// Check left and right for crossing possibilities
 			if (gd.col !== 0)
+
 				drawAt(
 					gd.xi + gd.col * 2 + gd.row * 2 - 1,
 					gd.yi + gd.row,
@@ -335,12 +374,14 @@ function keydownGame(event) {
 				);
 
 			if (gd.col !== gd.heap[gd.row].length - 1)
+
 				drawAt(
 					gd.xi + gd.col * 2 + gd.row * 2 + 1,
 					gd.yi + gd.row,
 					gd.heap[gd.row][gd.col + 1] || value ? ' ' : '-'
 				);
 		}
+
 		// Going back to row level
 		else if (event.code === 'Escape' || event.code === 'KeyQ') {
 			gd.state = ROW_SEL;
@@ -348,6 +389,7 @@ function keydownGame(event) {
 			redrawRowSel();
 		}
 	}
+
 	// Game is over
 	else if (gd.state === GAME_OVER) {
 		GAMESTATE = MENU;
@@ -377,31 +419,19 @@ function redrawScreen() {
 	clearScreen();
 
 	// Hand to appropriate screen
-	switch (GAMESTATE) {
-		case MENU:
-			redrawMenu();
-			break;
-		case GAME:
-			redrawGame();
-			break;
-	}
+	if (GAMESTATE === MENU) redrawMenu();
+	else if (GAMESTATE === GAME) redrawGame();
 }
 
 window.addEventListener('resize', redrawScreen);
 redrawScreen();
 
 // Keydown listener, hands it to the appropriate screen
-document.addEventListener('keydown', (event) => {
-	switch (GAMESTATE) {
-		case MENU:
-			keydownMenu(event);
-			break;
-		case GAME:
-			keydownGame(event);
-			break;
-	}
+document.addEventListener('keydown', event => {
+	if (GAMESTATE === MENU) keydownMenu(event);
+	else if (GAMESTATE === GAME) keydownGame(event);
 });
 
-document.addEventListener('keyup', (event) => {
+document.addEventListener('keyup', event => {
 	// Nothing actually uses the keyup listener yet
 });
