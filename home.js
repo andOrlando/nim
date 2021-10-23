@@ -210,10 +210,12 @@ function redrawGameOver() {
 }
 
 function keydownGame(event) {
+	// If we are at the row elvle, not the individual character level
 	if (gd.state === ROW_SEL) {
 		// Length of highlight so that it's calculated once and also clarity
 		const length = gd.heap[0].length * 2 + 1;
 
+		// Selecting previous row
 		if (event.code === 'KeyW' || event.code === 'ArrowUp') {
 			styleAt(gd.xi - 1, gd.yi + gd.row, length, {
 				backgroundColor: null,
@@ -222,7 +224,9 @@ function keydownGame(event) {
 			styleAt(gd.xi - 1, gd.yi + gd.row, length, {
 				backgroundColor: SELECTED_LINE_HL,
 			});
-		} else if (event.code === 'KeyS' || event.code == 'ArrowDown') {
+		}
+		// Selecting next row
+		else if (event.code === 'KeyS' || event.code == 'ArrowDown') {
 			styleAt(gd.xi - 1, gd.yi + gd.row, length, {
 				backgroundColor: null,
 			});
@@ -230,13 +234,15 @@ function keydownGame(event) {
 			styleAt(gd.xi - 1, gd.yi + gd.row, length, {
 				backgroundColor: SELECTED_LINE_HL,
 			});
-		} else if (event.code === 'Enter' || event.code === 'Space') {
+		}
+		// Entering moves
+		else if (event.code === 'Enter' || event.code === 'Space') {
 			// disallow selecting already selected row
 			if (!gd.heap[gd.row].includes(1)) {
 				clearAt(0, geo.y - 1, geo.x);
 				drawAt(0, geo.y - 1, ': Row is already crossed out');
 			}
-			// discard changes in other row if need be
+			// Discard changes in other row if need be
 			else if (gd.editedRow !== null && gd.editedRow !== gd.row) {
 				gd.heap = clone(gd.heapOld);
 				gd.state = LINE_SEL;
@@ -251,18 +257,23 @@ function keydownGame(event) {
 
 				gd.editedRow = gd.row;
 			}
-			// otherwise just do it normally
+			// Otherwise just do move normally
 			else {
 				gd.state = LINE_SEL;
 				redrawLineSel();
 
 				gd.editedRow = gd.row;
 			}
-		} else if (event.code === 'Escape' || event.code === 'KeyQ') {
+		}
+		// Exiitng the game
+		else if (event.code === 'Escape' || event.code === 'KeyQ') {
 			GAMESTATE = MENU;
 			redrawScreen();
 		}
-	} else if (gd.state === LINE_SEL) {
+	}
+	// If we are on the chracter level
+	else if (gd.state === LINE_SEL) {
+		// Moving the selected character left
 		if (
 			event.code === 'KeyA' ||
 			event.code === 'KeyS' ||
@@ -276,7 +287,9 @@ function keydownGame(event) {
 			styleAt(gd.xi + gd.col * 2 + gd.row * 2 - 1, gd.yi + gd.row, 3, {
 				backgroundColor: SELECTED_ROW_HL,
 			});
-		} else if (
+		}
+		// Moving the selected character right
+		else if (
 			event.code === 'KeyD' ||
 			event.code === 'KeyW' ||
 			event.code === 'ArrowRight' ||
@@ -292,7 +305,9 @@ function keydownGame(event) {
 			styleAt(gd.xi + gd.col * 2 + gd.row * 2 - 1, gd.yi + gd.row, 3, {
 				backgroundColor: SELECTED_ROW_HL,
 			});
-		} else if (event.code === 'Enter' || event.code === 'Space') {
+		}
+		// Crosing out characters
+		else if (event.code === 'Enter' || event.code === 'Space') {
 			if (!gd.heapOld[gd.row][gd.col]) {
 				clearAt(0, geo.y - 1, geo.x);
 				drawAt(
@@ -325,12 +340,16 @@ function keydownGame(event) {
 					gd.yi + gd.row,
 					gd.heap[gd.row][gd.col + 1] || value ? ' ' : '-'
 				);
-		} else if (event.code === 'Escape' || event.code === 'KeyQ') {
+		}
+		// Going back to row level
+		else if (event.code === 'Escape' || event.code === 'KeyQ') {
 			gd.state = ROW_SEL;
 			gd.col = 0;
 			redrawRowSel();
 		}
-	} else if (gd.state === GAME_OVER) {
+	}
+	// Game is over
+	else if (gd.state === GAME_OVER) {
 		GAMESTATE = MENU;
 		redrawScreen();
 	}
