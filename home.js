@@ -167,15 +167,14 @@ function redrawHeap() {
 		}
 	}
 
-	// TODO: Make one line lower
 	drawAt(
 		gd.xi + gd.heap[0].length * 2 - 9,
-		gd.yi + gd.heap.length,
+		gd.yi + gd.heap.length + 1,
 		'End Turn',
-		{ onclick: endTurn }
+		{ onclick:  endTurn }
 	);
 }
-
+// Ends turn by player and performs move by AI
 function endTurn() {
 	// Checks for no more 1s
 	if (![].concat(...gd.heap).includes(1)) {
@@ -183,12 +182,19 @@ function endTurn() {
 		redrawGame();
 		return;
 	}
-
+	// Doesn't end turn if no move was done
+	if (gd.heap.toString() == gd.heapOld.toString()) {
+		drawAt(0, geo.y - 1, ': Must make a move to end turn' )
+		return;
+	}
 	gd.heapOld = clone(gd.heap);
 	gd.state = ROW_SEL;
 	gd.player = gd.player ^ 3;
 	gd.editedRow = null;
 	gd.col = 0;
+	// Perform move by algorithm
+	makeAlgoMove(gd.heap);
+	// Prepare screen for player input
 	redrawRowSel();
 }
 /**
@@ -485,7 +491,22 @@ function makeAlgoMove(game) {
 			}}, 500)
 		
 		// Updating screen
-		setTimeout(() => {endTurn()}, 1000);
+		// The setTimeout closure is identical to endTurn except
+		// it doesn't include a call to makeAlgoMove() to prevent recursion
+		setTimeout(() => {
+			if (![].concat(...gd.heap).includes(1)) {
+				gd.state = GAME_OVER;
+				redrawGame();
+				return;
+			}
+		
+			gd.heapOld = clone(gd.heap);
+			gd.state = ROW_SEL;
+			gd.player = gd.player ^ 3;
+			gd.editedRow = null;
+			gd.col = 0;
+			redrawRowSel();
+		}, 1000)
 	}
 }
 /*******************
