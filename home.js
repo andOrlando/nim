@@ -111,6 +111,8 @@ const ROW_SEL = 0;
 const LINE_SEL = 1;
 const AI = 2;
 const GAME_OVER = 3;
+const UP = true;
+const DOWN = false;
 
 let gd; // Game Data
 
@@ -120,21 +122,22 @@ let gd; // Game Data
  */
 function resetGame(vsAI) {
 	gd = {
-		xi: 0,
-		yi: 0,
-		row: 0,
-		col: 0,
-		editedRow: null,
-		player: 1,
-		vsAI: vsAI,
-		textLength: 13,
-		highlightLength: 15,
+		xi: 0, //x-initial
+		yi: 0, //y-initial
+		row: 0, //selected row
+		col: 0, //selected column
+		editedRow: null, //which row has been edited
+		player: 1, //which player is going rn
+		vsAI: vsAI, //if it's an AI game
+		isAI: false, //if it's currently the AI's turn
+		textLength: 13, //length of heap
+		highlightLength: 15, //length of heap + padding
 
 		// TODO: Better heap initialization
 		heap: [[1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1], [1, 1, 1], [1]],
 		heapOld: [[1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1], [1, 1, 1], [1]],
 
-		state: ROW_SEL
+		state: ROW_SEL //gamestate
 	};
 }
 
@@ -174,14 +177,17 @@ function redrawHeap() {
 		{ onclick:  endTurn }
 	);
 }
+
 // Ends turn by player and performs move by AI
 function endTurn() {
-	// Checks for no more 1s
+	console.log("called3")
+	// Checks if there are no more 1s
 	if (![].concat(...gd.heap).includes(1)) {
 		gd.state = GAME_OVER;
 		redrawGame();
 		return;
 	}
+
 	// Doesn't end turn if no move was done
 	if (gd.heap.toString() == gd.heapOld.toString()) {
 		drawAt(0, geo.y - 1, ': Must make a move to end turn' )
@@ -192,38 +198,44 @@ function endTurn() {
 	gd.player = gd.player ^ 3;
 	gd.editedRow = null;
 	gd.col = 0;
-	// Perform move by algorithm
-	makeAlgoMove(gd.heap);
-	// Prepare screen for player input
-	redrawRowSel();
+	gd.isAI = false;
+
+	// If AI and it's player 2's turn, run algorithm sequence
+	if (gd.player === 2 && gd.vsAI) {
+		gd.isAI = true;
+		runAlgorithm();
+	}
+
+	// If color depends on player, we wanna redraw the screen
+	redrawRowSel()
 }
-/**
- * Completely rehighlights current row
- */
+
+/* Redraws the row selection screen */
 function redrawRowSel() {
 	// Clear Screen and draw heap
 	clearScreen();
 	redrawHeap();
 
+	// Higlights selected row
 	styleAt(
 		gd.xi - 1, 
 		gd.yi + gd.row, 
 		gd.highlightLength, 
-		{ backgroundColor: SELECTED_LINE_HL }
+		{ backgroundColor: gd.isAI ? ALGO_SELECTED_HL : SELECTED_LINE_HL }
 	);
 }
-/**
- * Highlights current character
- */
+
+/* Redraws the line selection menu */
 function redrawLineSel() {
 	// Clear screen and draw heap
 	clearScreen();
 	redrawHeap();
 
+	// Highlights selected character
 	styleAt(
 		gd.xi + gd.col * 2 + gd.row * 2 - 1, 
 		gd.yi + gd.row, 
-		3, { backgroundColor: SELECTED_ROW_HL }
+		3, { backgroundColor: gd.isAI ? ALGO_SELECTED_HL : SELECTED_ROW_HL }
 	);
 }
 
@@ -236,83 +248,147 @@ function redrawGameOver() {
 	);
 }
 
+function uiActionRowSel(up, color) {
+	// Unhiglight old stuff
+	styleAt(
+		gd.xi - 1, 
+		gd.yi + gd.row, 
+		gd.highlightLength, 
+		{ backgroundColor: null }
+	);
+
+	if (up) gd.row += gd.row !== 0 ? -1 : gd.heap.length - 1;
+	else gd.row += gd.row !== gd.heap.length - 1 ? 1 : 1 - gd.heap.length;
+
+	styleAt(
+		gd.xi - 1, 
+		gd.yi + gd.row, 
+		gd.highlightLength, 
+		{ backgroundColor: color || SELECTED_ROW_HL }
+	);
+
+}
+
+function uiActionLineSel(up, color) {
+	// TODO: Make clickable
+	styleAt(
+		gd.xi + gd.col * 2 + gd.row * 2 - 1,
+		gd.yi + gd.row,
+		3, { backgroundColor: null }
+	);
+
+	if (up) gd.col += gd.col !== 0 ? -1 : gd.heap[gd.row].length - 1;
+	else  gd.col += gd.col !== gd.heap[gd.row].length - 1 ? 1 : 1 - gd.heap[gd.row].length;
+
+	styleAt(gd.xi + gd.col * 2 + gd.row * 2 - 1,
+		gd.yi + gd.row,
+		3, { backgroundColor: color || SELECTED_ROW_HL }
+	);
+
+}
+
+function uiActionToScreen(ID) {
+	gd.state = ID;
+	redrawGame();
+}
+
+function uiActionEnter() {
+	if (gd.state === ROW_SEL) {
+		// disallow selecting already selected row
+		if (!gd.heap[gd.row].includes(1) && gd.row !== gd.editedRow) {
+			clearAt(0, geo.y - 1, geo.x);
+			drawAt(0, geo.y - 1, ': Row is already crossed out');
+		}
+
+		// Discard changes in other row if need be
+		else if (gd.editedRow !== null && gd.editedRow !== gd.row) {
+			gd.heap = clone(gd.heapOld);
+
+			uiActionToScreen(LINE_SEL);
+
+			clearAt(0, geo.y - 1, geo.x);
+			drawAt(0, geo.y - 1, `: Discarded changes in row ${gd.editedRow + 1}`);
+
+			gd.editedRow = gd.row;
+		}
+
+		// Otherwise just do move normally
+		else {
+			uiActionToScreen(LINE_SEL)
+			gd.editedRow = gd.row;
+		}
+	} 
+	
+	else if (gd.state === LINE_SEL) {
+
+		if (!gd.heapOld[gd.row][gd.col]) {
+			clearAt(0, geo.y - 1, geo.x);
+			drawAt(0, geo.y - 1, ': That line has already been crossed out');
+			return;
+		}
+
+		// Assigns both the heap value and `value` to the new value
+		const value = (gd.heap[gd.row][gd.col] = gd.heap[gd.row][gd.col] ^ 1);
+
+		drawAt(
+			gd.xi + gd.col * 2 + gd.row * 2,
+			gd.yi + gd.row,
+			value ? '|' : '+'
+		);
+
+		// Check left and right for crossing possibilities
+		if (gd.col !== 0)
+
+			drawAt(
+				gd.xi + gd.col * 2 + gd.row * 2 - 1,
+				gd.yi + gd.row,
+				gd.heap[gd.row][gd.col - 1] || value ? ' ' : '-'
+			);
+
+		if (gd.col !== gd.heap[gd.row].length - 1)
+
+			drawAt(
+				gd.xi + gd.col * 2 + gd.row * 2 + 1,
+				gd.yi + gd.row,
+				gd.heap[gd.row][gd.col + 1] || value ? ' ' : '-'
+			);
+	}
+}
+
 function keydownGame(event) {
 	// TESTING SECTION UNTIL AUTOMATIC CALLING OF makeAlgoMove() IS IMPLEMENTED
-	// TODO
-	if (event.code == 'KeyP') {
-		makeAlgoMove(gd.heap);
-		return;
+	// TODO: remove
+	if (event.code == 'KeyP') makeAlgoMove(gd.heap);
+
+	else if (gd.isAI) {
+		if (event.code === 'Escape' || event.code === 'KeyQ') {
+			for (let i = 0; i < timeouts.length; i++)
+				clearTimeout(timeouts[i])
+
+			timeouts = [];
+
+			GAMESTATE = MENU
+			redrawScreen()
+		}
 	}
+
 	// If we are at the row level, not the individual character level
-	if (gd.state === ROW_SEL) {
+	else if (gd.state === ROW_SEL) {
 
 		// Selecting previous row
-		if (event.code === 'KeyW' || event.code === 'ArrowUp') {
-			styleAt(
-				gd.xi - 1, 
-				gd.yi + gd.row, 
-				gd.highlightLength, 
-				{ backgroundColor: null }
-			);
-
-			gd.row += gd.row !== 0 ? -1 : gd.heap.length - 1;
-
-			styleAt(
-				gd.xi - 1, 
-				gd.yi + gd.row, 
-				gd.highlightLength, 
-				{ backgroundColor: SELECTED_LINE_HL }
-			);
-		}
+		if (event.code === 'KeyW' || event.code === 'ArrowUp') 
+		
+			uiActionRowSel(UP);
 
 		// Selecting next row
-		else if (event.code === 'KeyS' || event.code == 'ArrowDown') {
-			styleAt(
-				gd.xi - 1,
-				gd.yi + gd.row,
-				gd.highlightLength,
-				{ backgroundColor: null }
-			);
-			
-			gd.row += gd.row !== gd.heap.length - 1 ? 1 : 1 - gd.heap.length;
-
-			styleAt(
-				gd.xi - 1,
-				gd.yi + gd.row,
-				gd.highlightLength,
-				{ backgroundColor: SELECTED_LINE_HL }
-			);
-		}
+		else if (event.code === 'KeyS' || event.code == 'ArrowDown') 
+		
+			uiActionRowSel(DOWN);
 
 		// Entering moves
-		else if (event.code === 'Enter' || event.code === 'Space') {
-
-			// disallow selecting already selected row
-			if (!gd.heap[gd.row].includes(1)) {
-				clearAt(0, geo.y - 1, geo.x);
-				drawAt(0, geo.y - 1, ': Row is already crossed out');
-			}
-
-			// Discard changes in other row if need be
-			else if (gd.editedRow !== null && gd.editedRow !== gd.row) {
-				gd.heap = clone(gd.heapOld);
-				gd.state = LINE_SEL;
-				redrawLineSel();
-
-				clearAt(0, geo.y - 1, geo.x);
-				drawAt(0, geo.y - 1, `: Discarded changes in row ${gd.editedRow + 1}`);
-
-				gd.editedRow = gd.row;
-			}
-
-			// Otherwise just do move normally
-			else {
-				gd.state = LINE_SEL;
-				redrawLineSel();
-
-				gd.editedRow = gd.row;
-			}
-		}
+		else if (event.code === 'Enter' || event.code === 'Space') 
+		
+			uiActionEnter();
 
 		// Exit the game
 		else if (event.code === 'Escape' || event.code === 'KeyQ') {
@@ -327,74 +403,19 @@ function keydownGame(event) {
 		// Moving the selected character left
 		if (event.code === 'KeyA' || event.code === 'KeyS' ||
 			event.code === 'ArrowLeft' || event.code === 'ArrowDown')
-		{
-			// TODO: Make clickable
-			styleAt(
-				gd.xi + gd.col * 2 + gd.row * 2 - 1,
-				gd.yi + gd.row,
-				3, { backgroundColor: null }
-			);
-
-			gd.col += gd.col !== 0 ? -1 : gd.heap[gd.row].length - 1;
-
-			styleAt(gd.xi + gd.col * 2 + gd.row * 2 - 1,
-				gd.yi + gd.row,
-				3, { backgroundColor: SELECTED_ROW_HL }
-			);
-		}
+			
+			uiActionLineSel(UP)
 
 		// Moving the selected character right
 		else if (event.code === 'KeyD' || event.code === 'KeyW' ||
 			event.code === 'ArrowRight' || event.code === 'ArrowUp')
-		{
-			styleAt(gd.xi + gd.col * 2 + gd.row * 2 - 1,
-				gd.yi + gd.row,
-				3, { backgroundColor: null, }
-			);
 
-			gd.col += gd.col !== gd.heap[gd.row].length - 1 ? 1 : 1 - gd.heap[gd.row].length;
-
-			styleAt(
-				gd.xi + gd.col * 2 + gd.row * 2 - 1,
-				gd.yi + gd.row,
-				3, { backgroundColor: SELECTED_ROW_HL }
-			);
-		}
+			uiActionLineSel(DOWN)
 
 		// Crossing out characters
-		else if (event.code === 'Enter' || event.code === 'Space') {
-			if (!gd.heapOld[gd.row][gd.col]) {
-				clearAt(0, geo.y - 1, geo.x);
-				drawAt(0, geo.y - 1, ': That line has already been crossed out');
-				return;
-			}
-
-			// Assigns both the heap value and `value` to the new value
-			const value = (gd.heap[gd.row][gd.col] = gd.heap[gd.row][gd.col] ^ 1);
-
-			drawAt(
-				gd.xi + gd.col * 2 + gd.row * 2,
-				gd.yi + gd.row,
-				value ? '|' : '+'
-			);
-
-			// Check left and right for crossing possibilities
-			if (gd.col !== 0)
-
-				drawAt(
-					gd.xi + gd.col * 2 + gd.row * 2 - 1,
-					gd.yi + gd.row,
-					gd.heap[gd.row][gd.col - 1] || value ? ' ' : '-'
-				);
-
-			if (gd.col !== gd.heap[gd.row].length - 1)
-
-				drawAt(
-					gd.xi + gd.col * 2 + gd.row * 2 + 1,
-					gd.yi + gd.row,
-					gd.heap[gd.row][gd.col + 1] || value ? ' ' : '-'
-				);
-		}
+		else if (event.code === 'Enter' || event.code === 'Space')
+			
+			uiActionEnter();
 
 		// Going back to row level
 		else if (event.code === 'Escape' || event.code === 'KeyQ') {
@@ -411,104 +432,63 @@ function keydownGame(event) {
 	}
 }
 
+// This is the list of all timeouts to cancel if exits game
+let timeouts = []
+
 /**
  * Communicates with nim.js to get move,
  * then executes it slowly so user can see what is being played
- * @param {Number[][]} game this should always be gd.heap
  */
-// Kinda janky as if you call this really quickly multiple times, it does weird stuff
-// However this would never happen in a game
-function makeAlgoMove(game) {
-	let heaps = convertToHeaps(game);
-	let move = calculate_next_move(heaps);
+async function runAlgorithm() {
+	// Calculates next move from algorithm
+	let move = calculate_next_move(convertToHeaps(gd.heap));
+
 	if (!move) {
+
+		// TODO: Play out game
 		redrawGameOver()
-		// TODO: decide what algorithm should do if it cannot win
-		// Show loss screen or play out the game? Better user satisfaction that way probably
+
 	} else {
-		// If highlight is already on correct row change it's color
-		if (gd.row == move.row) {
-			styleAt(
-				gd.xi - 1,
-				gd.yi + gd.row,
-				gd.highlightLength,
-				{ backgroundColor: ALGO_SELECTED_HL}
-			);
-		}
-		// TODO: make line move in steps (not sure why it isn't already)
-		// TODO: make line move up or down depending on which way is faster
-		while (gd.row != move.row) {
-			styleAt(
-				gd.xi - 1, 
-				gd.yi + gd.row, 
-				gd.highlightLength, 
-				{ backgroundColor: null }
-			);
-			// Goes up a row	
-			gd.row += gd.row !== 0 ? -1 : gd.heap.length - 1;
 
-			styleAt(
-				gd.xi - 1, 
-				gd.yi + gd.row, 
-				gd.highlightLength, 
-				{ backgroundColor: ALGO_SELECTED_HL }
-			);
-		}
-		
-		// Using setTimeout() to stagger different parts of move
-		// so that they are visible
-		setTimeout(() => {
-			styleAt(
-				gd.xi - 1, 
-				gd.yi + gd.row, 
-				gd.highlightLength, 
-				{ backgroundColor: null }
-			);
-		}, 500)
+		let offset = 0
 
-		setTimeout(() => {
-			// Updating game state
-			let removedIndices = [];
-			for (let i = 0; i < gd.heap[move.row].length; i++) {
-				if (removedIndices.length == move.removals) break;
-				const line = gd.heap[move.row][i];
-				if (line == 1) {
-					styleAt(
-						gd.xi + gd.col * 2 + gd.row * 2 - 1,
-						gd.yi + gd.row,
-						3, 
-						{ backgroundColor: ALGO_SELECTED_HL }
-					);
-					gd.col += 1;
-					removedIndices.push(i);
-				} else {
-					gd.col += 1;
-				}
+		// Row movement
+		for (let i = 0; i < Math.abs(gd.row - move.row); i++)
+			timeouts.push(setTimeout(() => {uiActionRowSel(gd.row > move.row, ALGO_SELECTED_HL)}, 500 * ++offset))
+
+		timeouts.push(setTimeout(() => {uiActionEnter()}, 500 * ++offset))
+
+		// Column movement
+		// Can't use gd.col because that's being updated asynchronously
+		for (let col = 0; col < gd.heap[move.row].length; col++) {
+
+			// If you can remove, remove
+			if (gd.heap[move.row][col]) {
+				timeouts.push(setTimeout(() => {uiActionEnter()}, 500 * ++offset));
+				move.removals -= 1;
 			}
-			for (let i = 0; i < removedIndices.length; i++) {
-				const index = removedIndices[i];
-				gd.heap[move.row][index] = 0;
-			}}, 500)
-		
-		// Updating screen
-		// The setTimeout closure is identical to endTurn except
-		// it doesn't include a call to makeAlgoMove() to prevent recursion
-		setTimeout(() => {
-			if (![].concat(...gd.heap).includes(1)) {
-				gd.state = GAME_OVER;
-				redrawGame();
-				return;
+
+			// If you're not at the last one, move left
+			if (move.removals !== 0) {
+				timeouts.push(setTimeout(() => {uiActionLineSel(DOWN, ALGO_SELECTED_HL)}, 500 * ++offset));
 			}
-		
-			gd.heapOld = clone(gd.heap);
-			gd.state = ROW_SEL;
-			gd.player = gd.player ^ 3;
-			gd.editedRow = null;
-			gd.col = 0;
-			redrawRowSel();
-		}, 1000)
+
+			// If you are at the last one, break
+			else break;
+
+		}
+
+		// Go back one screen
+		timeouts.push(setTimeout(() => {uiActionToScreen(ROW_SEL)}, 500 * ++offset));
+
+		//TODO: Navigate to End Turn button
+
+		// End turn
+		timeouts.push(setTimeout(() => {endTurn(); console.log(timeouts)}, 500 * ++offset));
+
 	}
 }
+
 /*******************
  *  GENERAL LOGIC  *
  *******************/

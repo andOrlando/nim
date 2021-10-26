@@ -9,9 +9,7 @@ const charGeo = {
 // I have no idea why I have to -1 for line height but there's 1px of whitespace if I don't
 // Thank you CSS
 document.getElementById('tui-test').remove();
-document
-	.querySelector(':root')
-	.style.setProperty('--tui-div-line-height', `${charGeo.y - 1}px`);
+document.querySelector(':root').style.setProperty('--tui-div-line-height', `${charGeo.y - 1}px`);
 
 // Initially no characters
 let geo = { x: 0, y: 0 };
@@ -21,17 +19,9 @@ function recreateScreen(x, y) {
 	// Adjust xs
 	if (x != geo.x) {
 		// Get action for xs
-		const action =
-			x < geo.x
-				? (x, div) => {
-						div.querySelector(`[x='${x - 1}']`).remove();
-				  }
-				: (x, div) => {
-						div.insertAdjacentHTML(
-							'beforeend',
-							`<span x='${x}'> </span>`
-						);
-				  };
+		const action = x < geo.x ? 
+			(x, div) => {div.querySelector(`[x='${x - 1}']`).remove()} :
+			(x, div) => {div.insertAdjacentHTML('beforeend', `<span x='${x}'> </span>`)};
 
 		// If we're removing extra, we only need to remove the earlier xs
 		const yMax = y < geo.y ? y : geo.y;
@@ -40,9 +30,8 @@ function recreateScreen(x, y) {
 			// Get the div
 			const div = document.querySelector(`[y='${i}']`);
 
-			for (let j = 0; j < Math.abs(x - geo.x); j++) {
+			for (let j = 0; j < Math.abs(x - geo.x); j++)
 				action(x > geo.x ? geo.x + j : geo.x - j, div);
-			}
 		}
 	}
 
@@ -50,24 +39,13 @@ function recreateScreen(x, y) {
 	if (y != geo.y) {
 		// Get action for ys
 		// When adding new ones, it just creates a string containing the div and all the spans
-		const action =
-			y < geo.y
-				? (y) => {
-						document.querySelector(`[y='${y - 1}']`).remove();
-				  }
-				: (y) => {
-						document.getElementById('tui').insertAdjacentHTML(
-							'beforeend',
-							`<div y='${y}'>
-				${Array.from({ length: x }, (_, i) => `<span x='${i}'> </span>`).join(
-					''
-				)}</div>`
-						);
-				  };
+		const action = y < geo.y ? 
+			(y) => {document.querySelector(`[y='${y - 1}']`).remove()} : 
+			(y) => {document.getElementById('tui').insertAdjacentHTML('beforeend',`<div y='${y}'>
+				${Array.from({length:x}, (_, i)=>`<span x='${i}'> </span>`).join('')}</div>`)};
 
-		for (let i = 0; i < Math.abs(y - geo.y); i++) {
+		for (let i = 0; i < Math.abs(y - geo.y); i++)
 			action(y > geo.y ? geo.y + i : geo.y - i);
-		}
 	}
 
 	// Update geo.x with new values
@@ -86,9 +64,8 @@ window.addEventListener('resize', () => {
 	const x = Math.floor(window.innerWidth / charGeo.x);
 	const y = Math.floor(window.innerHeight / charGeo.y);
 
-	if (geo.x != x || geo.y != y) {
+	if (geo.x != x || geo.y != y)
 		recreateScreen(x, y);
-	}
 });
 
 /*****************************
