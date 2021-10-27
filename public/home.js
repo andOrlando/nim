@@ -3,6 +3,8 @@ GAMESTATE = 0;
 
 const MENU = 0;
 const GAME = 1;
+const SETTINGS = 2;
+const ABOUT = 3;
 
 const SELECTED_MENU_HL = 'var(--selected-item-color)';
 const SELECTED_LINE_HL = 'var(--selected-item-color)';
@@ -92,11 +94,9 @@ function keydownMenu(event) {
 		} else if (md.selectedIndex === 1) {
 			GAMESTATE = GAME;
 			resetGame(true);
-		} else if (md.selectedIndex === 2) {
-			// Settings
-		} else if (md.selectedIndex === 3) {
-			// About
-		}
+		} 
+		else if (md.selectedIndex === 2) GAMESTATE = SETTINGS;
+		else if (md.selectedIndex === 3) GAMESTATE = ABOUT;
 
 		redrawScreen();
 	}
@@ -490,6 +490,55 @@ async function runAlgorithm() {
 }
 
 /*******************
+ * SETTINGS LOGIC  *
+ *******************/
+
+function redrawSettings() {
+	drawAt(2, 1, "Settings");
+	drawAt(2, 2, "To be implemented");
+	drawAt(2, 3, "(coding is hard!)");
+
+	drawAt(0, geo.y-1, "Press Q or ESC to go back");
+}
+
+function keydownSettings(event) {
+	if (event.code === "Escape" || event.code === "KeyQ") {
+		GAMESTATE = MENU;
+		redrawScreen();
+	}
+}
+
+/*******************
+ *   ABOUT LOGIC   *
+ *******************/
+
+function redrawAbout() {
+	drawAt(2, 1, "About us");
+	drawAt(2, 3, "This was made by:");
+	drawAt(2, 4, "-");
+	drawAt(4, 4, "andOrlando", 
+		{onclick: () => {window.open("https://github.com/andOrlando", "_blank")}, color: "blue"});
+	drawAt(16, 4, "(ui and tui library)");
+	drawAt(2, 5, "-");
+	drawAt(4, 5, "fprasx", 
+		{onclick: () => {window.open("https://github.com/fprasx", "_blank")}, color: "blue"});
+	drawAt(16, 5, "(ui and nim solver)");
+	drawAt(2, 7, "Our Repository", 
+		{onclick: () => {window.open("https://github.com/andOrlando/nim", "_blank")}, color: "blue"});
+	drawAt(2, 8, "Thanks for playing!");
+
+	drawAt(0, geo.y-1, "Press Q or ESC to go back");
+}
+
+function keydownAbout(event) {
+	if (event.code === "Escape" || event.code === "KeyQ") {
+		GAMESTATE = MENU;
+		redrawScreen();
+	}
+}
+
+
+/*******************
  *  GENERAL LOGIC  *
  *******************/
 
@@ -501,6 +550,8 @@ function redrawScreen() {
 	// Hand to appropriate screen
 	if (GAMESTATE === MENU) redrawMenu();
 	else if (GAMESTATE === GAME) redrawGame();
+	else if (GAMESTATE === SETTINGS) redrawSettings();
+	else if (GAMESTATE === ABOUT) redrawAbout();
 }
 
 window.addEventListener('resize', redrawScreen);
@@ -510,6 +561,8 @@ redrawScreen();
 document.addEventListener('keydown', event => {
 	if (GAMESTATE === MENU) keydownMenu(event);
 	else if (GAMESTATE === GAME) keydownGame(event);
+	else if (GAMESTATE === SETTINGS) keydownSettings(event);
+	else if (GAMESTATE === ABOUT) keydownAbout(event);
 });
 
 document.addEventListener('keyup', event => {
