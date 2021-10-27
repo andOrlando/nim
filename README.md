@@ -17,3 +17,4 @@ TUI (Terminal User Interface) for playing Nim but it's cool becuase it's in the 
 - [ ] Change Player 2 Color (settings?)
 - [ ] Change Player Names (settings?)
 - [ ] Full themeing support (this seems a bit overkill but whatever)
+- [ ] Toggle which player goes first or random selection (settings?)
