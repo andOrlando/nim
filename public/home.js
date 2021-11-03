@@ -163,24 +163,52 @@ function redrawHeap() {
 		for (let j = 0; j < gd.heap[i].length; j++) {
 			x = gd.xi + 2 * i + 2 * j;
 			y = gd.yi + i;
-			drawAt(x, y, gd.heap[i][j] ? '|' : '+');
+			drawAt(x, y, gd.heap[i][j] ? '|' : '+', {onclick: "", onhover: ""});
 
+			// Draw -s inbetween +s
 			if (!gd.heap[i][j] && j !== 0 && !gd.heap[i][j - 1])
 				drawAt(x - 1, y, '-');
+
+			// Style for hover and click if it's lineseling
+			if (i === gd.row && gd.state === LINE_SEL)
+				styleAt(x, y, 1, {
+					onclick: uiActionEnter,
+					onhover: () => uiActionLineSel(j),
+				})
 		}
+
+		if (gd.state === ROW_SEL)
+			styleAt(gd.xi-1, gd.yi + i, gd.highlightLength, {
+				onclick: uiActionEnter,
+				onhover: () => uiActionRowSel(i),
+			})
 	}
 
 	drawAt(
-		gd.xi + gd.heap[0].length * 2 - 9,
+		gd.xi,
 		gd.yi + gd.heap.length + 1,
-		'End Turn',
-		{ onclick:  endTurn }
+		' '.repeat(gd.heap[0].length * 2 - 9) + 'End Turn', 
+		{ onclick: endTurn }
 	);
+
+	// Hovers for EndTurn
+	if (gd.state === ROW_SEL)
+		styleAt(gd.xi-1, gd.yi + gd.heap.length + 1, gd.highlightLength, {
+			onhover: () => {uiActionRowSel(gd.heap.length + 1)}
+		});
+	
+	if (gd.state === LINE_SEL)
+		styleAt(gd.xi-1, gd.yi + gd.heap.length + 1, gd.highlightLength, {
+			onhover: () => styleAt(gd.xi-1, gd.yi + gd.heap.length + 1, gd.highlightLength, 
+				{backgroundColor: SELECTED_LINE_HL}),
+			offhover: () => styleAt(gd.xi-1, gd.yi + gd.heap.length + 1, gd.highlightLength, 
+				{backgroundColor: null}),
+
+		});
 }
 
 // Ends turn by player and performs move by AI
 function endTurn() {
-	console.log("called3")
 	// Checks if there are no more 1s
 	if (![].concat(...gd.heap).includes(1)) {
 		gd.state = GAME_OVER;
@@ -219,7 +247,7 @@ function redrawRowSel() {
 	// Higlights selected row
 	styleAt(
 		gd.xi - 1, 
-		gd.yi + gd.row, 
+		gd.yi + gd.row + (gd.row === gd.heap.length ? 1 : 0), 
 		gd.highlightLength, 
 		{ backgroundColor: gd.isAI ? ALGO_SELECTED_HL : SELECTED_LINE_HL }
 	);
@@ -248,41 +276,48 @@ function redrawGameOver() {
 	);
 }
 
-function uiActionRowSel(up, color) {
+function uiActionRowSel(row, color) {
 	// Unhiglight old stuff
 	styleAt(
 		gd.xi - 1, 
-		gd.yi + gd.row, 
+		gd.yi + gd.row + (gd.row === gd.heap.length ? 1 : 0), 
 		gd.highlightLength, 
-		{ backgroundColor: null }
+		{ backgroundColor: null}
 	);
 
-	if (up) gd.row += gd.row !== 0 ? -1 : gd.heap.length - 1;
-	else gd.row += gd.row !== gd.heap.length - 1 ? 1 : 1 - gd.heap.length;
+	if (typeof(row) === "boolean") {
+		if (row) gd.row += gd.row !== 0 ? -1 : gd.heap.length;
+		else gd.row += gd.row !== gd.heap.length ? 1 : -gd.heap.length;
+	}
+	else gd.row = row;
 
 	styleAt(
 		gd.xi - 1, 
-		gd.yi + gd.row, 
+		gd.yi + gd.row + (gd.row === gd.heap.length ? 1 : 0),
 		gd.highlightLength, 
 		{ backgroundColor: color || SELECTED_ROW_HL }
 	);
 
 }
 
-function uiActionLineSel(up, color) {
+function uiActionLineSel(col, color) {
 	// TODO: Make clickable
 	styleAt(
 		gd.xi + gd.col * 2 + gd.row * 2 - 1,
 		gd.yi + gd.row,
-		3, { backgroundColor: null }
+		3, 
+		{ backgroundColor: null, onclick: "" }
 	);
 
-	if (up) gd.col += gd.col !== 0 ? -1 : gd.heap[gd.row].length - 1;
-	else  gd.col += gd.col !== gd.heap[gd.row].length - 1 ? 1 : 1 - gd.heap[gd.row].length;
+	if (typeof(col) === "boolean") {
+		if (col) gd.col += gd.col !== 0 ? -1 : gd.heap[gd.row].length - 1;
+		else  gd.col += gd.col !== gd.heap[gd.row].length - 1 ? 1 : 1 - gd.heap[gd.row].length;
+	} 
+	else gd.col = col
 
 	styleAt(gd.xi + gd.col * 2 + gd.row * 2 - 1,
 		gd.yi + gd.row,
-		3, { backgroundColor: color || SELECTED_ROW_HL }
+		3, { backgroundColor: color || SELECTED_ROW_HL, onclick: uiActionEnter }
 	);
 
 }
@@ -294,6 +329,12 @@ function uiActionToScreen(ID) {
 
 function uiActionEnter() {
 	if (gd.state === ROW_SEL) {
+		// If "End Turn" selected, end turn
+		if (gd.row === gd.heap.length) {
+			endTurn();
+			return;
+		}
+
 		// disallow selecting already selected row
 		if (!gd.heap[gd.row].includes(1) && gd.row !== gd.editedRow) {
 			clearAt(0, geo.y - 1, geo.x);

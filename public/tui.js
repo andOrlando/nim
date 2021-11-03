@@ -87,6 +87,9 @@ function clearAt(x, y, length) {
 		char.textContent = ' ';
 		char.style.color = null;
 		char.style.backgroundColor = 'var(--background-color)';
+		char.onclick = "";
+		char.onmouseenter = "";
+		char.onmouseleave = "";
 	}
 }
 
@@ -117,7 +120,9 @@ function drawAt(x, y, text, style = {}) {
 		if (style.color !== undefined) char.style.color = style.color;
 		if (style.backgroundColor !== undefined) char.style.backgroundColor = style.backgroundColor;
 
-		if (style.onclick !== undefined) char.addEventListener("click", style.onclick)
+		if (style.onclick !== undefined) char.onclick = style.onclick
+		if (style.onhover !== undefined) char.onmouseenter = style.onhover
+		if (style.offhover !== undefined) char.onmouseleave = stye.offhover
 	}
 }
 
@@ -138,7 +143,8 @@ function styleAt(x, y, length, style = {}) {
 		if (style.color !== undefined) char.style.color = style.color;
 		if (style.backgroundColor !== undefined) char.style.backgroundColor = style.backgroundColor;
 
-		if (style.onclick !== undefined) char.addEventListener("click", style.onclick)
-		else if (style.onclick === null) char.removeEventListener("click")
+		if (style.onclick !== undefined) char.onclick = style.onclick
+		if (style.onhover !== undefined) char.onmouseenter = style.onhover
+		if (style.offhover !== undefined) char.onmouseleave = style.offhover
 	}
 }
