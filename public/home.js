@@ -172,15 +172,15 @@ function redrawHeap() {
 			// Style for hover and click if it's lineseling
 			if (i === gd.row && gd.state === LINE_SEL)
 				styleAt(x, y, 1, {
-					onclick: uiActionEnter,
-					onhover: () => uiActionLineSel(j),
+					onclick: () => {if (!gd.isAI) uiActionEnter()},
+					onhover: () => {if (!gd.isAI) uiActionLineSel(j)},
 				})
 		}
 
 		if (gd.state === ROW_SEL)
 			styleAt(gd.xi-1, gd.yi + i, gd.highlightLength, {
-				onclick: uiActionEnter,
-				onhover: () => uiActionRowSel(i),
+				onclick: () => {if (!gd.isAI) uiActionEnter()},
+				onhover: () => {if (!gd.isAI) uiActionRowSel(i)},
 			})
 	}
 
@@ -188,21 +188,21 @@ function redrawHeap() {
 		gd.xi,
 		gd.yi + gd.heap.length + 1,
 		' '.repeat(gd.heap[0].length * 2 - 9) + 'End Turn', 
-		{ onclick: endTurn }
+		{ onclick: () => {if (!gd.isAI) endTurn()} }
 	);
 
 	// Hovers for EndTurn
 	if (gd.state === ROW_SEL)
 		styleAt(gd.xi-1, gd.yi + gd.heap.length + 1, gd.highlightLength, {
-			onhover: () => {uiActionRowSel(gd.heap.length + 1)}
+			onhover: () => {if (!gd.isAI) uiActionRowSel(gd.heap.length + 1)}
 		});
 	
 	if (gd.state === LINE_SEL)
 		styleAt(gd.xi-1, gd.yi + gd.heap.length + 1, gd.highlightLength, {
-			onhover: () => styleAt(gd.xi-1, gd.yi + gd.heap.length + 1, gd.highlightLength, 
-				{backgroundColor: SELECTED_LINE_HL}),
-			offhover: () => styleAt(gd.xi-1, gd.yi + gd.heap.length + 1, gd.highlightLength, 
-				{backgroundColor: null}),
+			onhover: () => {if (!gd.isAI) styleAt(gd.xi-1, gd.yi + gd.heap.length + 1, gd.highlightLength, 
+				{backgroundColor: SELECTED_LINE_HL})},
+			offhover: () => {if (!gd.isAI) styleAt(gd.xi-1, gd.yi + gd.heap.length + 1, gd.highlightLength, 
+				{backgroundColor: null})},
 
 		});
 }
@@ -317,7 +317,10 @@ function uiActionLineSel(col, color) {
 
 	styleAt(gd.xi + gd.col * 2 + gd.row * 2 - 1,
 		gd.yi + gd.row,
-		3, { backgroundColor: color || SELECTED_ROW_HL, onclick: uiActionEnter }
+		3, 
+		{	backgroundColor: color || SELECTED_ROW_HL, 
+			onclick: () => {if (!gd.AI) uiActionEnter()}
+		}
 	);
 
 }
