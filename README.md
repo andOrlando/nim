@@ -1,4 +1,6 @@
 # Nim
+[Check it out here!](https://nim-tui.herokuapp.com/)
+
 TUI (Terminal User Interface) for playing Nim but it's cool becuase it's in the browser and there's a basically unbeatable algorithm too
 
 ### Controls:
